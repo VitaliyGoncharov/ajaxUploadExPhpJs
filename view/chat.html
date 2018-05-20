@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>ajaxUploadExPhpJs</title>
+</head>
+<body>
+	<form action="/upload.php" method="POST" enctype="multipart/form-data" onsubmit="return uploadFile(event);">
+		<input id="uploadImage" type="FILE" name="uploadImage" multiple="">
+		<button type="submit">Upload my files</button>
+	</form>
+
+	<script type="text/javascript">
+		function uploadFile(e) {
+			// target это форма, т.к. в теге формы вызвали функцию
+			let formElems = e.target.elements;
+			let action = e.target.action;
+
+			// uploadImage это name и id инпута, т.к. они одинаковые, то
+			// в массиве элементов будет только один ключ.
+			// это то же самое, что formElems["uploadImage"]
+			let inputElem = formElems.uploadImage;
+			let files = inputElem.files;
+
+			// посмотрим массив этих файлов
+			console.log(files);
+
+			// создаем formData, который сделает низкоуровневую работу по преобразованию файла в текст
+			let formData = new FormData();
+			for (let i=0;i<files.length;i++) {
+				let file = files[i];
+
+				// Покажем имя и формат загружаемого файла
+				console.log("Добавляем файл #"+i);
+				console.log("Имя: " + file.name + ", формат: " + file.type);
+
+				// название ключа (в данном случае file[]) особой роли не играет
+				// т.о. на сервере массив $_FILES будет таким:
+				// Array(file => Array(name => Array([0] => название первого файла, [1] => название второго)))
+				// если поменять на стандартную загрузку из формы (без ajax), то код на сервере менять не придется
+				//
+				// если сделать ключ file_$i, то в $_FILES каждый файл будет в отдельном ключе
+				// Array(file_0 => Array(name => название, ...), file_1 => Array(name => название))
+				formData.append('file['+i+']',file);
+
+				console.log("Файл #"+i+" успешно добавлен");
+			}
+
+			let xhr = new XMLHttpRequest();
+			xhr.open("POST",action, true);
+
+			// Если используется защита CSRF, то нужно установить нужный header, например:
+			// xhr.setRequestHeader('X-CSRF-TOKEN', $('input[name="_token"]').attr('value'));
+
+			xhr.send(formData);
+
+			xhr.upload.onload = function () {
+				console.log("Файлы успешно загружены на сервере!");
+			}
+
+			xhr.onreadystatechange = function () {
+				if (this.readyState == 4) {
+					console.log("Операции завершены!");
+				}
+			}
+
+			return false;
+		}
+	</script>
+</body>
+</html>
